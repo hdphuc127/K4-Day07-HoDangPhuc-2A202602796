@@ -1,7 +1,7 @@
 # Báo Cáo Nhóm — Lab 7: Embedding & Vector Store
 
-**Nhóm:** [Tên nhóm]
-**Thành viên:** Hồ Đăng Phúc
+**Nhóm:** AuraFarming
+**Thành viên:** Hồ Đăng Phúc, Lê Nguyễn Trâm Anh, Nguyễn Thanh Hòa
 **Ngày:** 19/09/2026
 
 > **Nộp 1 bản / nhóm.** Phần cá nhân (hướng tiếp cận, kết quả riêng, dự đoán…) mỗi thành viên nộp riêng trong `REPORT_CANHAN.md`. Chi tiết thang điểm: `docs/SCORING.md`.
@@ -100,15 +100,14 @@ class HeadingChunker:
 ```
 (mã đầy đủ tại [src/chunking.py](../src/chunking.py))
 
-**Thành viên 2 — [Tên]**
-- **Loại chiến lược:**
-- **Mô tả & lý do chọn:**
-- **Code snippet (nếu custom):**
+**Thành viên 2 — Lê Nguyễn Trâm Anh**
+- **Loại chiến lược: FixedSizeChunker**
+- **Mô tả & lý do chọn: Là hình thức chunking đơn giản, cắt văn bản theo số lượng ký tự cố định. Có thể làm nhanh và hiệu quả.**
 
-**Thành viên 3 — [Tên]**
-- **Loại chiến lược:**
-- **Mô tả & lý do chọn:**
-- **Code snippet (nếu custom):**
+**Thành viên 3 — Nguyễn Thanh Hòa**
+- **Loại chiến lược: RecursiveChunker**
+- **Mô tả & lý do chọn: Là chiến lược chunking linh hoạt, tự động chia văn bản thành các đoạn dựa trên các dấu phân cách. Có thể thích nghi tốt với nhiều loại tài liệu khác nhau.**
+
 
 ### So Sánh Giữa Các Thành Viên
 
@@ -116,8 +115,8 @@ class HeadingChunker:
 |-----------|----------|----------------------|-----------|----------|
 | Hồ Đăng Phúc (R3) | HeadingChunker (phẳng) | 3/5 câu khớp gold marker với `OpenAIEmbedder` thật (xem `REPORT_CANHAN.md` mục 5) | Chunk trùng khớp ranh giới ngữ nghĩa của văn bản quy định (mỗi mục là một chunk), không cắt giữa câu/mục | Với văn bản ngắn/ít heading (VD `usth-scholarship-procedure.md`), kết quả rơi về giống hệt `RecursiveChunker`; một số heading dùng chung ngôn ngữ ("quy trình/thời hạn học bổng") giữa nhiều chương trình khác nhau nên vẫn bị nhầm chunk giữa các tài liệu |
 | Hồ Đăng Phúc (R3, thử nghiệm mở rộng) | HeadingChunker + Hierarchical roll-up (RAPTOR-style, `src/hierarchical.py`) | 4/5 câu khớp gold marker (`summary_beam=3`), chạy trên Chroma persist dir riêng `./chroma_data/hierarchical_r3` (xem `REPORT_CANHAN.md` mục 5) | Tầng tóm tắt LLM gộp đúng các chunk cùng chủ đề trước khi drill-down, sửa được lỗi "nhầm chương trình học bổng" mà bản phẳng gặp phải ở câu 2 (Green Tech) | Tốn thêm ~15 lệnh gọi LLM tóm tắt (8 tài liệu, 58 chunk gốc); nới beam ở tầng tóm tắt để cứu câu 3 (quy trình) thực tế làm **giảm** xuống 3/5 vì phá vỡ lợi thế "khoanh vùng chủ đề" — xác nhận đây là đánh đổi recall/precision thật, không phải bug đơn giản có thể sửa một chiều |
-| R1 | FixedSizeChunker (`chunk_size=500, overlap=0`) — xác định lại từ `ket_qua_benchmark_R1.txt` bằng cách khớp đúng ranh giới cắt ký tự (R3 chạy lại cùng tham số ra đúng cùng vị trí cắt "…flexible hybrid: on") | 4/5 câu khớp gold marker | Q1 và Q4 khớp ngay ở top-1 (điểm rất cao, 0.80/0.71) vì cắt cứng theo 500 ký tự vô tình giữ trọn số liệu quan trọng trong 1 chunk; Q3 (quy trình) khớp đủ cả 3 "Step 1/2/3" nhờ ranh giới cắt tình cờ giữ "Step 1"+"Step 2" trong chunk#0 và "Step 3" trong chunk#1 | Trượt Q5 (câu cần `metadata_filter=audience:student`) — top-3 dù đã lọc đúng vẫn không đưa `usth-scholarship-regulation-2026` (chứa "Vietnamese/international students") lên đủ cao, vì cắt cứng không theo mục nên câu quan trọng bị pha loãng trong chunk dài chứa nhiều nội dung không liên quan |
-| R2 | RecursiveChunker + `LocalEmbedder` (`sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`, embedding **local**, không qua API) — theo đúng header ghi trong `ket_qua_benchmark_R2.txt` | 4/5 câu khớp gold marker | Q3 (quy trình) là chunk **duy nhất trong cả nhóm** khớp đủ **cả 3** gold marker "Step 1/2/3" ngay trong 2 chunk đầu — mô hình multilingual hiểu tốt cụm "quy trình xét học bổng" bằng tiếng Việt dù tài liệu gốc tiếng Anh; Q5 (filter) cũng khớp đủ 2 gold marker | Trượt Q2 (mốc thời gian Green Tech) — `Gold markers found in top-3: []`, top-3 lẫn sang `usth-scholarship-application-2026`/`usth-scholarship-portal-2026-2027` dù top-1 đã đúng tài liệu Green Tech (chunk#0 không chứa mục "Important Dates") |
+| Lê Nguyễn Trâm Anh | FixedSizeChunker (`chunk_size=500, overlap=0`) — xác định lại từ `ket_qua_benchmark_R1.txt` bằng cách khớp đúng ranh giới cắt ký tự (R3 chạy lại cùng tham số ra đúng cùng vị trí cắt "…flexible hybrid: on") | 4/5 câu khớp gold marker | Q1 và Q4 khớp ngay ở top-1 (điểm rất cao, 0.80/0.71) vì cắt cứng theo 500 ký tự vô tình giữ trọn số liệu quan trọng trong 1 chunk; Q3 (quy trình) khớp đủ cả 3 "Step 1/2/3" nhờ ranh giới cắt tình cờ giữ "Step 1"+"Step 2" trong chunk#0 và "Step 3" trong chunk#1 | Trượt Q5 (câu cần `metadata_filter=audience:student`) — top-3 dù đã lọc đúng vẫn không đưa `usth-scholarship-regulation-2026` (chứa "Vietnamese/international students") lên đủ cao, vì cắt cứng không theo mục nên câu quan trọng bị pha loãng trong chunk dài chứa nhiều nội dung không liên quan |
+| Nguyễn Thanh Hòa | RecursiveChunker + `LocalEmbedder` (`sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`, embedding **local**, không qua API) — theo đúng header ghi trong `ket_qua_benchmark_R2.txt` | 4/5 câu khớp gold marker | Q3 (quy trình) là chunk **duy nhất trong cả nhóm** khớp đủ **cả 3** gold marker "Step 1/2/3" ngay trong 2 chunk đầu — mô hình multilingual hiểu tốt cụm "quy trình xét học bổng" bằng tiếng Việt dù tài liệu gốc tiếng Anh; Q5 (filter) cũng khớp đủ 2 gold marker | Trượt Q2 (mốc thời gian Green Tech) — `Gold markers found in top-3: []`, top-3 lẫn sang `usth-scholarship-application-2026`/`usth-scholarship-portal-2026-2027` dù top-1 đã đúng tài liệu Green Tech (chunk#0 không chứa mục "Important Dates") |
 
 **Chiến lược nào tốt nhất cho chủ đề này? Tại sao?**
 > Xét theo tổng điểm thô, 4 trong 5 cấu hình chunking+embedding mà nhóm đã thử đều dừng ở **4/5**: `FixedSizeChunker` (R1), `RecursiveChunker` + local embedding (R2), `RecursiveChunker` + `OpenAIEmbedder` (nhóm, `benchmark/bench.py`), và `HeadingChunker` + hierarchical roll-up (R3, mở rộng) — chỉ riêng `HeadingChunker` phẳng (R3) thấp hơn ở 3/5. Nhưng con số tổng này che giấu một phát hiện quan trọng hơn: **mỗi cấu hình trượt ở một câu khác nhau**:
